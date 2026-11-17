@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Czech Accounting & Payroll Hub (Séc)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar -->
+    <aside class="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col justify-between shrink-0">
+        <div>
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="bg-blue-600 text-white font-bold px-3 py-2 rounded-xl shadow-sm">CZ</div>
+                <div>
+                    <h1 class="font-bold text-base text-slate-900">Účetnictví & Mzdy</h1>
+                    <p class="text-xs text-slate-400">Multi-Company Hub (Séc)</p>
+                </div>
+            </div>
+
+            <!-- Chọn Doanh nghiệp -->
+            <div class="mb-6">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Doanh nghiệp đang chọn</label>
+                <select id="companySelector" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 outline-none">
+                    <option value="helen" data-ico="08912345" data-dic="CZ08912345" data-name="Helen Homestay s.r.o.">Helen Homestay s.r.o.</option>
+                    <option value="luggage" data-ico="19876543" data-dic="CZ19876543" data-name="LuggageDropNow CZ s.r.o.">LuggageDropNow CZ s.r.o.</option>
+                    <option value="osvc" data-ico="76543210" data-dic="" data-name="Bùi Quang Tùng (OSVČ)">Bùi Quang Tùng (OSVČ)</option>
+                </select>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="space-y-1.5">
+                <button onclick="showTab('payroll')" id="btn-payroll" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold bg-blue-50 text-blue-600 transition">
+                    <span>👥</span> <span>Tính lương & Thuế NV</span>
+                </button>
+                <button onclick="showTab('ares')" id="btn-ares" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    <span>🔍</span> <span>Tra cứu ARES (Bộ Tài chính)</span>
+                </button>
+                <button onclick="showTab('qr')" id="btn-qr" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    <span>📱</span> <span>Tạo mã QR Platba</span>
+                </button>
+                <button onclick="showTab('tax')" id="btn-tax" class="tab-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    <span>📄</span> <span>Xuất Přiznání XML (EPO)</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="mt-8 bg-slate-50 border border-slate-200/80 p-4 rounded-xl text-xs text-slate-600">
+            <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800">Trạng thái:</span>
+                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold text-[10px]">Sẵn sàng dùng thử</span>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed">Đã tích hợp đầy đủ quy tắc tính toán tài chính chuẩn pháp luật Cộng hòa Séc.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+        
+        <!-- TAB 1: PAYROLL (TÍNH LƯƠNG HPP / DPP / DPČ) -->
+        <section id="tab-payroll" class="tab-content max-w-4xl">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Tính lương & Thuế Nhân viên (Mzdy)</h2>
+                <p class="text-sm text-slate-500">Tự động tính bảo hiểm xã hội, y tế, giảm trừ gia cảnh và Daňový bonus theo quy định hiện hành.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Họ tên nhân viên</label>
+                        <input type="text" id="empName" value="Jan Novák" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Loại hợp đồng</label>
+                            <select id="contractType" onchange="calcPayroll()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white outline-none">
+                                <option value="HPP">HPP (Chính thức)</option>
+                                <option value="DPP">DPP (&lt; 12.000 Kč)</option>
+                                <option value="DPC">DPČ (&lt; 4.500 Kč)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Lương Gross (CZK)</label>
+                            <input type="number" id="grossSalary" value="45000" oninput="calcPayroll()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Số con nhỏ giảm trừ</label>
+                            <select id="childrenCount" onchange="calcPayroll()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white outline-none">
+                                <option value="0">0 con</option>
+                                <option value="1">1 con</option>
+                                <option value="2">2 con</option>
+                                <option value="3">3 con trở lên</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center pt-5">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="pinkForm" checked onchange="calcPayroll()" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-xs font-semibold text-slate-700">Ký tờ khai thuế (Sleva)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button onclick="addEmployeeToTable()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm shadow-sm transition">
+                        + Thêm vào bảng lương tháng
+                    </button>
+                </div>
+
+                <div class="lg:col-span-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Kết quả tính toán</span>
+                            <span id="insBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Đóng BH đầy đủ</span>
+                        </div>
+                        <div class="space-y-2.5 text-sm">
+                            <div class="flex justify-between"><span class="text-slate-500">Lương Gross:</span><span id="resGross" class="font-bold">45 000 Kč</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">BHXH NV (7,1%):</span><span id="resEmpSoc" class="text-rose-600 font-medium">-3 195 Kč</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">BHYT NV (4,5%):</span><span id="resEmpHealth" class="text-rose-600 font-medium">-2 025 Kč</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Thuế TNCN:</span><span id="resTax" class="text-rose-600 font-medium">-4 180 Kč</span></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <span class="text-sm font-bold text-slate-700">Lương thực nhận (Net):</span>
+                            <span id="resNet" class="text-2xl font-extrabold text-emerald-600">35 600 Kč</span>
+                        </div>
+                        <div class="bg-slate-50 px-3 py-2 rounded-lg flex justify-between text-xs text-slate-500">
+                            <span>Tổng chi phí doanh nghiệp (Super-cost):</span>
+                            <span id="resTotalCost" class="font-bold text-slate-700">60 210 Kč</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-800">Danh sách nhân sự đã lập</h3>
+                    <span id="totalCompanyPayrollCost" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Tổng quỹ chi phí: 60 210 Kč</span>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-400 text-xs uppercase">
+                        <tr>
+                            <th class="py-3 px-6">Nhân viên</th>
+                            <th class="py-3 px-6">Hợp đồng</th>
+                            <th class="py-3 px-6">Gross</th>
+                            <th class="py-3 px-6">Net thực nhận</th>
+                            <th class="py-3 px-6">Chi phí DN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td class="py-3.5 px-6 font-semibold">Jan Novák</td>
+                            <td class="py-3.5 px-6"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-bold">HPP</span></td>
+                            <td class="py-3.5 px-6">45 000 Kč</td>
+                            <td class="py-3.5 px-6 font-bold text-emerald-600">35 600 Kč</td>
+                            <td class="py-3.5 px-6 font-medium text-slate-700">60 210 Kč</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 2: TRA CỨU ARES -->
+        <section id="tab-ares" class="tab-content hidden max-w-3xl">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Tra cứu Doanh nghiệp Séc (ARES API)</h2>
+                <p class="text-sm text-slate-500">Kiểm tra thông tin đăng ký kinh doanh, mã DIČ và địa chỉ trụ sở trực tiếp từ cơ sở dữ liệu nhà nước Séc.</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex space-x-3 mb-6">
+                    <input type="text" id="aresIcoInput" placeholder="Nhập mã IČO 8 chữ số (ví dụ: 27082440)" maxlength="8" class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="lookupAres()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition">Tra cứu ngay</button>
+                </div>
+                <div id="aresResultBox" class="hidden bg-slate-50 p-5 rounded-xl border border-slate-200 text-sm space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- TAB 3: TẠO QR PLATBA -->
+        <section id="tab-qr" class="tab-content hidden max-w-3xl">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Tạo mã QR Thanh toán (QR Platba)</h2>
+                <p class="text-sm text-slate-500">Tạo mã QR chuẩn ngân hàng Séc đính kèm hóa đơn giúp khách hàng quét trả tiền tự động điền Variabilní symbol.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="md:col-span-7 space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Số tài khoản nhận (IBAN)</label>
+                        <input type="text" id="qrIban" value="CZ6508000000001920001453" oninput="generateQR()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-mono outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Số tiền (CZK)</label>
+                            <input type="number" id="qrAmount" value="12500" oninput="generateQR()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Variabilní symbol (VS)</label>
+                            <input type="text" id="qrVs" value="20260015" oninput="generateQR()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-mono outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nội dung (Zpráva pro příjemce)</label>
+                        <input type="text" id="qrMsg" value="Uhrada faktury 20260015" oninput="generateQR()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm outline-none">
+                    </div>
+                </div>
+                <div class="md:col-span-5 flex flex-col items-center justify-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div id="qrcodeContainer" class="bg-white p-3 rounded-xl shadow-sm mb-3"></div>
+                    <span class="text-xs font-bold text-slate-700">Mã QR Platba</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: XUẤT XML QUYẾT TOÁN -->
+        <section id="tab-tax" class="tab-content hidden max-w-3xl">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Xuất Tờ khai Quyết toán Cuối năm (XML)</h2>
+                <p class="text-sm text-slate-500">Xuất file XML cấu trúc chuẩn nộp lên cổng Moje daně (Finanční správa ČR).</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Năm tài chính</label>
+                        <input type="number" id="taxYear" value="2025" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Thuế đã tạm ứng</label>
+                        <input type="number" id="taxAdvances" value="25000" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tổng doanh thu năm (Výnosy)</label>
+                        <input type="number" id="taxRev" value="2450000" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tổng chi phí năm (Náklady)</label>
+                        <input type="number" id="taxExp" value="1680000" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold">
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button onclick="downloadAnnualXml()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-sm transition">
+                        ⬇ Tải xuống file XML Quyết toán
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-blue-600');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('bg-blue-50', 'text-blue-600');
+            activeBtn.classList.remove('text-slate-600');
+            if (tabId === 'qr') generateQR();
+        }
+
+        let savedRows = [{ name: 'Jan Novák', contract: 'HPP', gross: 45000, net: 35600, cost: 60210 }];
+
+        function calcPayroll() {
+            const contract = document.getElementById('contractType').value;
+            const gross = parseFloat(document.getElementById('grossSalary').value) || 0;
+            const children = parseInt(document.getElementById('childrenCount').value) || 0;
+            const hasPinkForm = document.getElementById('pinkForm').checked;
+
+            let subjectToIns = true;
+            if (contract === 'DPP' && gross < 12000) subjectToIns = false;
+            if (contract === 'DPC' && gross < 4500) subjectToIns = false;
+
+            const badge = document.getElementById('insBadge');
+            if (subjectToIns) {
+                badge.textContent = 'Đóng BH đầy đủ';
+                badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700';
+            } else {
+                badge.textContent = 'Miễn đóng BH (Dưới ngưỡng)';
+                badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700';
+            }
+
+            const empSoc = subjectToIns ? Math.round(gross * 0.071) : 0;
+            const empHealth = subjectToIns ? Math.round(gross * 0.045) : 0;
+            const taxBefore = Math.round(gross * 0.15);
+            const payerDiscount = hasPinkForm ? 2570 : 0;
+            
+            let childDiscount = 0;
+            if (hasPinkForm) {
+                if (children >= 1) childDiscount += 1267;
+                if (children >= 2) childDiscount += 1860;
+                if (children >= 3) childDiscount += 2320;
+            }
+
+            let taxAfterPayer = Math.max(0, taxBefore - payerDiscount);
+            let finalTax = Math.max(0, taxAfterPayer - childDiscount);
+
+            const netSalary = gross - empSoc - empHealth - finalTax;
+            const erSoc = subjectToIns ? Math.round(gross * 0.248) : 0;
+            const erHealth = subjectToIns ? Math.round(gross * 0.09) : 0;
+            const totalCost = gross + erSoc + erHealth;
+
+            document.getElementById('resGross').textContent = gross.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('resEmpSoc').textContent = '-' + empSoc.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('resEmpHealth').textContent = '-' + empHealth.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('resTax').textContent = '-' + finalTax.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('resNet').textContent = netSalary.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('resTotalCost').textContent = totalCost.toLocaleString('cs-CZ') + ' Kč';
+
+            return { gross, netSalary, totalCost, contract };
+        }
+
+        function addEmployeeToTable() {
+            const name = document.getElementById('empName').value.trim() || 'Nhân viên mới';
+            const res = calcPayroll();
+            savedRows.push({ name, contract: res.contract, gross: res.gross, net: res.netSalary, cost: res.totalCost });
+            
+            const tbody = document.getElementById('payrollTableBody');
+            tbody.innerHTML = savedRows.map(r => `
+                <tr>
+                    <td class="py-3.5 px-6 font-semibold">${r.name}</td>
+                    <td class="py-3.5 px-6"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-bold">${r.contract}</span></td>
+                    <td class="py-3.5 px-6">${r.gross.toLocaleString('cs-CZ')} Kč</td>
+                    <td class="py-3.5 px-6 font-bold text-emerald-600">${r.net.toLocaleString('cs-CZ')} Kč</td>
+                    <td class="py-3.5 px-6 font-medium text-slate-700">${r.cost.toLocaleString('cs-CZ')} Kč</td>
+                </tr>
+            `).join('');
+
+            const sumCost = savedRows.reduce((acc, item) => acc + item.cost, 0);
+            document.getElementById('totalCompanyPayrollCost').textContent = 'Tổng quỹ chi phí: ' + sumCost.toLocaleString('cs-CZ') + ' Kč';
+        }
+
+        async function lookupAres() {
+            const ico = document.getElementById('aresIcoInput').value.trim();
+            const box = document.getElementById('aresResultBox');
+            if (ico.length !== 8 || isNaN(ico)) {
+                alert('Vui lòng nhập đúng 8 chữ số IČO.');
+                return;
+            }
+            box.classList.remove('hidden');
+            box.innerHTML = '<p class="text-slate-500">Đang kết nối dữ liệu Bộ Tài chính Séc (ARES)...</p>';
+            try {
+                const resp = await fetch(`https://ares.gov.cz/ekonomicke-subjekty-v-re-cestinu/rest/ekonomicke-subjekty/${ico}`);
+                if (!resp.ok) throw new Error('Không tìm thấy doanh nghiệp.');
+                const data = await resp.json();
+                box.innerHTML = `
+                    <div class="text-emerald-700 font-bold mb-2">✓ Tìm thấy thông tin hợp lệ</div>
+                    <p><b>Tên công ty:</b> ${data.obchodniJmeno || 'N/A'}</p>
+                    <p><b>IČO:</b> ${data.ico}</p>
+                    <p><b>DIČ:</b> ${data.dic || 'Không có'}</p>
+                    <p><b>Địa chỉ:</b> ${data.sidlo?.textovaAdresa || 'N/A'}</p>
+                `;
+            } catch (err) {
+                box.innerHTML = `<p class="text-rose-600 font-semibold">Lỗi: Không thể kết nối ARES hoặc sai IČO.</p>`;
+            }
+        }
+
+        function generateQR() {
+            const iban = document.getElementById('qrIban').value.replace(/\s+/g, '');
+            const amount = parseFloat(document.getElementById('qrAmount').value || 0).toFixed(2);
+            const vs = document.getElementById('qrVs').value.trim();
+            const msg = document.getElementById('qrMsg').value.trim();
+            const spd = `SPD*1.0*ACC:${iban}*AM:${amount}*CC:CZK*X-VS:${vs}*MSG:${msg}`;
+            
+            const container = document.getElementById('qrcodeContainer');
+            container.innerHTML = '';
+            new QRCode(container, { text: spd, width: 160, height: 160 });
+        }
+
+        function downloadAnnualXml() {
+            const sel = document.getElementById('companySelector');
+            const opt = sel.options[sel.selectedIndex];
+            const ico = opt.getAttribute('data-ico');
+            const dic = opt.getAttribute('data-dic') || ('CZ' + ico);
+            const name = opt.getAttribute('data-name');
+            const year = document.getElementById('taxYear').value;
+            const rev = parseFloat(document.getElementById('taxRev').value) || 0;
+            const exp = parseFloat(document.getElementById('taxExp').value) || 0;
+            const advances = parseFloat(document.getElementById('taxAdvances').value) || 0;
+
+            const profit = Math.max(0, rev - exp);
+            const roundedBase = Math.floor(profit / 1000) * 1000;
+            const tax21 = Math.round(roundedBase * 0.21);
+            const balanceDue = tax21 - advances;
+
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Pisemnost nazevSouboru="DPPO_${ico}_${year}.xml" verzeSw="1.0">
+  <DPPO verzePis="03.01">
+    <VetaC dic="${dic}" ico="${ico}" nazevFirmy="${name}" rok="${year}" typDap="B" />
+    <VetaD r010="${profit.toFixed(2)}" r270="${roundedBase.toFixed(2)}" r280="21" r290="${tax21.toFixed(2)}" r330="${advances.toFixed(2)}" r340="${balanceDue.toFixed(2)}" />
+  </DPPO>
+</Pisemnost>`;
+
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DPPO_${ico}_${year}.xml`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        calcPayroll();
+    </script>
+</body>
+</html>
